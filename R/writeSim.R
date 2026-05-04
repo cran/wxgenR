@@ -133,6 +133,9 @@
   write.table(outmat, fout, row.names = FALSE, col.names = TRUE, sep=",")
 
 } #irealz
+
+  wxgenR_fun_message("writeSim")
+
 } #end function
 
 

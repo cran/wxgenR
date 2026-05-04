@@ -1,7 +1,7 @@
 Package: wxgenR
 Type: Package
 Title: A Stochastic Weather Generator with Seasonality
-Version: 1.4.4
+Version: 1.4.5
 Authors@R: 
   c(person(given = "Subhrendu",
            family = "Gangopadhyay",
@@ -36,7 +36,6 @@ Copyright: This software is in the public domain because it contains
 Encoding: UTF-8
 LazyData: true
 LazyDataCompression: xz
-RoxygenNote: 7.3.2
 Imports: lubridate, msm, sm, dplyr, plyr, foreach, parallel,
         doParallel, stats, utils, magrittr, doRNG, mc2d, qmap, tidyr
 Suggests: knitr, rmarkdown, reshape2, ggpubr, moments, seas, padr,
@@ -44,8 +43,9 @@ Suggests: knitr, rmarkdown, reshape2, ggpubr, moments, seas, padr,
         mapview, xts, sf, lfstat, FedData, ggplot2
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2025-04-14 19:35:06 UTC; dwoodson
+Packaged: 2026-05-04 18:08:42 UTC; dwoodson
 Depends: R (>= 3.5.0)
+Config/roxygen2/version: 8.0.0
 Author: Subhrendu Gangopadhyay [aut],
   Lindsay Bearup [aut],
   David Woodson [aut, cre],
@@ -55,4 +55,4 @@ Author: Subhrendu Gangopadhyay [aut],
   Eve Halper [aut]
 Maintainer: David Woodson <dwoodson@usbr.gov>
 Repository: CRAN
-Date/Publication: 2025-04-14 19:50:01 UTC
+Date/Publication: 2026-05-04 19:30:02 UTC

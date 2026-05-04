@@ -34,9 +34,7 @@
   #simulate precipitation amounts and select dates
   #
   #get month for a given julian day
-  lpyear = dat.d$year[min(which(leap_year(dat.d$year)))]
-  aday <- ymd(paste(lpyear, smo, 1, sep="-")) #jan 1 of a leap year to have a 366-day year
-  it1 = which(dat.d$date == aday)
+  it1 = get_reference_366_start(dat.d, smo, "precipitation amount simulation")
   it2 = it1+366-1
   jdaymth <- dat.d$month[it1:it2] #calculations are based on a 366-day year
   #
@@ -57,7 +55,7 @@
   if (ekflag){
 
     #get the bandwidth for each julian day
-    bSJ <- vector()
+    bSJ <- if(lw > 1) matrix(NA, nrow = 366, ncol = lw) else vector()
     diwprcp <- vector()              #days in window with precipitation
 
     jday = 1
@@ -65,55 +63,59 @@
 
       # print(jday)
 
-      #if variable window width, find the season in which current jday exists
-      if(lw > 1){
-        seas.j = Xseas[jday,1]
-        if(is.na(seas.j)) seas.j = Xseas[jday-1,1] #if indexed season for jday is NA, use prior day
-        if(is.na(seas.j)) seas.j = Xseas[jday+1,1] #if still NA, use following day
-        Xdates = Xdates.vw[[seas.j]]
-        #set adaptive window width to window width for current season
-        wwidth.adapt = wwidth[seas.j]
-      } else{
-        wwidth.adapt = wwidth
-      }
+      seas.bandwidth <- if(lw > 1) 1:lw else 1
 
-      diw <- na.omit(Xdates[jday,])  #dates in window for a given julian day
+      for(seas.j in seas.bandwidth){
+        #if variable window width, calculate the bandwidth for each season-specific window
+        if(lw > 1){
+          Xdates = Xdates.vw[[seas.j]]
+          wwidth.adapt = wwidth[seas.j]
+        } else{
+          wwidth.adapt = wwidth
+        }
 
-      idxlist <- vector()
+        diw <- na.omit(Xdates[jday,])  #dates in window for a given julian day
 
-      iday = 1
-      for (iday in 1:length(diw)){
-        idxlist[iday] = which(dat.d$date1==diw[iday])
-      } #iday
-
-      baprcp <- dat.d$prcp[idxlist]       #basin average precipitation
-                                          #also includes 0 prcp amount
-                                          #for days within the window
-
-      pamt <- baprcp[which(baprcp>=traceThreshold)] #precipitation amount vector
-
-      #### Begin adaptive window width process if less than 2 prcp amounts exist
-      while(length(pamt) < 2 | all(diff(pamt) == 0)){
-
-        wwidth.adapt = wwidth.adapt + 1
-
-        #get dates in window for each julian day 1-366
-        Xdates.adapt=getDatesInWindow(syr,eyr,smo,emo,sdate,edate,wwidth.adapt,leapflag=T)
-        diw <- na.omit(Xdates.adapt[jday,])  #dates in window for a given julian day
         idxlist <- vector()
 
+        iday = 1
         for (iday in 1:length(diw)){
-          idxlist[iday]=which(dat.d$date1==diw[iday])
+          idxlist[iday] = which(dat.d$date1==diw[iday])
         } #iday
-        baprcp <- dat.d$prcp[idxlist]
+
+        baprcp <- dat.d$prcp[idxlist]       #basin average precipitation
+                                            #also includes 0 prcp amount
+                                            #for days within the window
 
         pamt <- baprcp[which(baprcp>=traceThreshold)] #precipitation amount vector
 
-      }
+        #### Begin adaptive window width process if less than 2 prcp amounts exist
+        while(length(pamt) < 2 | all(diff(pamt) == 0)){
 
-      diwprcp[jday] = length(pamt)
-      logpamt <- log(pamt)                #log-transformed precipitation amount vector
-      bSJ[jday] = sm::hsj(logpamt)          #Sheather-Jones plug-in bandwidth
+          wwidth.adapt = wwidth.adapt + 1
+
+          #get dates in window for each julian day 1-366
+          Xdates.adapt=getDatesInWindow(syr,eyr,smo,emo,sdate,edate,wwidth.adapt,leapflag=T)
+          diw <- na.omit(Xdates.adapt[jday,])  #dates in window for a given julian day
+          idxlist <- vector()
+
+          for (iday in 1:length(diw)){
+            idxlist[iday]=which(dat.d$date1==diw[iday])
+          } #iday
+          baprcp <- dat.d$prcp[idxlist]
+
+          pamt <- baprcp[which(baprcp>=traceThreshold)] #precipitation amount vector
+
+        }
+
+        diwprcp[jday] = length(pamt)
+        logpamt <- log(pamt)                #log-transformed precipitation amount vector
+        if(lw > 1){
+          bSJ[jday, seas.j] = sm::hsj(logpamt) #Sheather-Jones plug-in bandwidth
+        }else{
+          bSJ[jday] = sm::hsj(logpamt)
+        }
+      }
 
     } #jday
   } #ekflag
@@ -140,7 +142,7 @@
 
     irealz = 1
     # result <- foreach(irealz=1:nrealz, .export=c('repan', 'getDatesInWindow')) %dopar% {
-    result <- foreach(irealz=1:nrealz, .export=c('repan', 'getDatesInWindow'),
+    result <- foreach(irealz=1:nrealz, .export=c('repan', 'getDatesInWindow', 'get_sim_season'),
                       .options.RNG = if (exists("aseed")) aseed else NULL) %dorng% {
 
     # for (irelz in 1:nrealz){
@@ -161,9 +163,8 @@
 
           #if variable window width, find the season in which current jday exists
           if(lw > 1){
-            seas.j = Xseas[ixp,1]
-            if(is.na(seas.j)) seas.j = Xseas[ixp-1,1] #if indexed season for jday is NA, use prior day
-            if(is.na(seas.j)) seas.j = Xseas[ixp+1,1] #if still NA, use following day
+            seas.j = get_sim_season(Xseas, ixp, irealz)
+            if(is.na(seas.j) | seas.j < 1 | seas.j > lw) stop("Unable to match simulated day to a valid season-specific window width.", call. = FALSE)
             Xdates = Xdates.vw[[seas.j]]
             #set adaptive window width to window width for current season
             wwidth.adapt = wwidth[seas.j]
@@ -223,7 +224,8 @@
           Xpamt[ixp] = exp(ybar)
           if (ekflag){
             rek = repan(1)                      #simulate a random number from the EKD
-            Xpamt[ixp] = exp(ybar+rek*bSJ[jd])
+            bandwidth = if(lw > 1) bSJ[jd, seas.j] else bSJ[jd]
+            Xpamt[ixp] = exp(ybar+rek*bandwidth)
           } #ekflag
         }
       } #ixp
@@ -273,9 +275,8 @@
 
           #if variable window width, find the season in which current jday exists
           if(lw > 1){
-            seas.j = Xseas[ixp,1]
-            if(is.na(seas.j)) seas.j = Xseas[ixp-1,1] #if indexed season for jday is NA, use prior day
-            if(is.na(seas.j)) seas.j = Xseas[ixp+1,1] #if still NA, use following day
+            seas.j = get_sim_season(Xseas, ixp, irealz)
+            if(is.na(seas.j) | seas.j < 1 | seas.j > lw) stop("Unable to match simulated day to a valid season-specific window width.", call. = FALSE)
             Xdates = Xdates.vw[[seas.j]]
             #set adaptive window width to window width for current season
             wwidth.adapt = wwidth[seas.j]
@@ -336,7 +337,8 @@
           Xpamt[ixp,irealz] = exp(ybar)
           if (ekflag){
             rek = repan(1)                      #simulate a random number from the EKD
-            Xpamt[ixp,irealz] = exp(ybar+rek*bSJ[jd])
+            bandwidth = if(lw > 1) bSJ[jd, seas.j] else bSJ[jd]
+            Xpamt[ixp,irealz] = exp(ybar+rek*bandwidth)
           } #ekflag
         }
       } #ixp

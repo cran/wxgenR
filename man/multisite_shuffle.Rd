@@ -23,6 +23,7 @@ Returns a list containing results and metadata from the multisite shuffling in '
   \item shuffledResultsOnly - Dataframe containing shuffled simulations for all traces and stations ('sim_prcp' and 'sim_temp').
   \item shuffledResultsAndObs - Dataframe containing shuffled simulations as well as corresponding observations/training data ('prcp' and 'temp' are the observed data).
   \item shuffledAndUnshuffled - Dataframe containing shuffled simulations, unshuffled simulations, observations. Unshuffled vs and shuffled are indicated by the 'Tag' variable.
+  \item nameMap - Dataframe mapping station IDs and variables to internal names used during shuffling.
 }
 }
 \description{
@@ -31,6 +32,12 @@ multiple stations' simulations such that wxgenR can be used in multisite applica
 Specifically, the `multisite_shuffle` function uses an approach developed by Iman and Conover (1982) and later applied by Clark et al. (2004)
 to capture the rank correlation among observed station data and introduce it to those stations' simulations. The Iman and Conover approach is implemented
 using the `cornode` function from the `mc2d` package.
+Note that `mc2d::cornode()` preserves the first variable passed to the
+shuffling routine as an anchor. In `multisite_shuffle()`, variables are
+ordered by station, with precipitation before temperature, so the first
+station's precipitation series may remain unchanged between the unshuffled
+and shuffled outputs. This behavior is expected and does not indicate a
+failed shuffle.
 }
 \examples{
 \donttest{
@@ -47,7 +54,7 @@ print(ms)
 \references{
 Iman, Ronald & Conover, William. (1982). A Distribution-Free Approach to Inducing Rank Correlation Among Input Variates. Communications in Statistics-simulation and Computation - COMMUN STATIST-SIMULAT COMPUT. 11. 311-334. 10.1080/03610918208812265.
 
-Clark, M., Gangopadhyay, S., Hay, L., Rajagopalan, B., & Wilby, R. (2004). The Schaake Shuffle: A Method for Reconstructing Space–Time Variability in Forecasted Precipitation and Temperature Fields. Journal of Hydrometeorology, 5(1), 243-262. https://doi.org/10.1175/1525-7541(2004)005<0243:TSSAMF>2.0.CO;2
+Clark, M., Gangopadhyay, S., Hay, L., Rajagopalan, B., & Wilby, R. (2004). The Schaake Shuffle: A Method for Reconstructing Space-Time Variability in Forecasted Precipitation and Temperature Fields. Journal of Hydrometeorology, 5(1), 243-262. https://doi.org/10.1175/1525-7541(2004)005<0243:TSSAMF>2.0.CO;2
 
 R. Pouillot, M.-L. Delignette-Muller (2010), Evaluating variability and uncertainty in microbial quantitative risk assessment using two R packages. International Journal of Food Microbiology. 142(3):330-40
 }

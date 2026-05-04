@@ -125,11 +125,13 @@
   emo = preppedData$emo
   sdate = preppedData$sdate
   edate = preppedData$edate
+  traceThreshold = preppedData$traceThreshold
 
   #
   #calculate seasonal precipitation transition prob matrix for each year
-  tpm.y2 <- getPtpm(dat.d, traceThreshold)$tpm.y2
-  tpm.y <- getPtpm(dat.d, traceThreshold)$tpm.y
+  ptpm <- getPtpm(dat.d, traceThreshold)
+  tpm.y2 <- ptpm$tpm.y2
+  tpm.y <- ptpm$tpm.y
   #
   #calculate parameters for temperature simulation
   z.t <- getTpars(dat.d, pcpOccFlag, traceThreshold, smo, emo, returnTempModel)
@@ -182,6 +184,8 @@
                "Xpdate"=Xpdate,"Xpamt"=Xpamt,"Xtemp"=Xtemp,"tmp.mod" = z.t$tmp.mod
     )
   }
+
+  wxgenR_fun_message("wx")
 
   return(olist)
 } #end function

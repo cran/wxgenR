@@ -36,29 +36,8 @@
   set.seed(aseed) #set seed
   #
 
-  # Define the lengths of each month in a 366-day year
-  month_lengths = c(31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
-  full_months = rep(1:12, times = month_lengths)  # Correctly repeat months based on their lengths
-
-  # Find the start and end indices based on the month
-  start_index = min(which(full_months == smo))
-  end_index = max(which(full_months == emo))
-
-  # Create the custom month vector for the specified range
-  if (start_index <= end_index) {
-    custom_months = full_months[start_index:end_index]
-  } else {
-    custom_months = c(full_months[start_index:366], full_months[1:end_index])
-  }
-
-  # Repeat for the number of simulation years
-  zz <- rep(custom_months, nsim)
-  yy <- rep(1:nsim, each = length(custom_months)) # Simulation year
-
   #get month for a given julian day
-  lpyear = uyr[min(which(leap_year(uyr)))]
-  aday <- ymd(paste(lpyear, smo, 1, sep="-")) #jan 1 of a leap year to have a 366-day year
-  it1 = which(dat.d$date == aday)
+  it1 = get_reference_366_start(dat.d, smo, "precipitation occurrence and temperature simulation")
   it2 = it1+366-1
   jdaymth <- dat.d$month[it1:it2]
   zz <- rep(jdaymth, nsim) #simulation month
@@ -120,13 +99,19 @@
         temp[1,isim] = dframe$tavgm[1]      #temperature for day=1 of simulation
       }else{ #if monthly average is NA for that year, randomly sample other years until a monthly average is found
         while(is.na(temp[1,isim])){
-          iyr.t = sample(1:nyr, 1)          #randomly select a year index
-          simyr.t = uyr[iyr.t]
+          if(smo == 1){
+            iyr.t = sample(1:nyr, 1)          #randomly select a year index
+            simyr.t = uyr[iyr.t]
+            startdate.t <- ymd(paste(simyr.t, smo, 1, sep="-"))
+          }else{
+            iyr.t = sample(1:(nyr-1), 1)
+            simyr.t = uyr[-1][iyr.t]
+            startdate.t <- ymd(paste(simyr.t-1, smo, 1, sep="-"))
+          }
           simyr1[isim,irealz] = simyr[isim]
 
-          startdate.t <- ymd(paste(simyr.t, 1, 1, sep="-")) #jan 1 of year uyr[iyr]
           it1.t = which(dat.d$date == startdate.t) #starting index of data
-          it2.t = it1+nt-1
+          it2.t = it1.t+nt-1
           dframe.t <- dat.d[it1.t:it2.t,] #data subset for simulation
 
           temp[1,isim] = dframe.t$tavgm[1]

@@ -99,3 +99,78 @@ days_in_months <- function(sd, ed) {
 
   return(days_in_month)
 }
+
+# Find a complete 366-day period starting on the simulation start month.
+get_reference_366_start <- function(dat.d, smo, context = "weather generator") {
+  candidates <- which(dat.d$month == smo & dat.d$day == 1)
+
+  for (idx in candidates) {
+    idx2 <- idx + 365
+    if (idx2 > nrow(dat.d)) next
+
+    dates <- as.Date(dat.d$date[idx:idx2])
+    if (any(is.na(dates))) next
+    if (!all(as.numeric(diff(dates)) == 1)) next
+    if (!any(dat.d$month[idx:idx2] == 2 & dat.d$day[idx:idx2] == 29)) next
+
+    return(idx)
+  }
+
+  stop(paste0(
+    "wxgenR requires at least one complete 366-day period starting in month ",
+    smo, " for ", context,
+    ". Include a leap year in the training period, or adjust `syr`, `eyr`, `smo`, and `emo`."
+  ), call. = FALSE)
+}
+
+get_sim_season <- function(Xseas, row, col) {
+  rows <- c(row, row - 1, row + 1)
+  rows <- rows[rows >= 1 & rows <= nrow(Xseas)]
+  seasons <- Xseas[rows, col]
+  seasons <- seasons[!is.na(seasons)]
+
+  if (length(seasons) == 0) return(NA_integer_)
+  as.integer(seasons[1])
+}
+
+wxgenR_fun_messages_enabled <- function() {
+  isTRUE(getOption("wxgenR.funMessages", interactive()))
+}
+
+wxgenR_fun_message <- function(stage) {
+  if (!wxgenR_fun_messages_enabled()) return(invisible(NULL))
+
+  messages <- list(
+    wx = c(
+      "wxgenR: weather generated. The atmosphere has signed off on the paperwork.",
+      "wxgenR: simulation complete. Clouds have been persuaded into matrix form.",
+      "wxgenR: done. The stochastic weather machine is cooling down.",
+      "wxgenR: weather generated. A cosmic gumbo of precipitation, temperature, and seasonality."
+    ),
+    writeSim = c(
+      "wxgenR: simulations written. The files are wearing tiny hard hats.",
+      "wxgenR: output saved. Your traces have left the building.",
+      "wxgenR: files complete. The commas behaved themselves."
+    ),
+    multisite_shuffle = c(
+      "wxgenR: multisite shuffle complete. Station ranks have changed seats politely.",
+      "wxgenR: shuffle done. Spatial correlation has entered the chat.",
+      "wxgenR: multisite results ready. The stations are now in coordinated formation.",
+      "wxgenR: multisite shuffle complete. The station network is kind of a cosmic gumbo."
+    ),
+    generate_TmaxTmin = c(
+      "wxgenR: Tmax and Tmin generated. The diurnal range has found its lane.",
+      "wxgenR: temperature post-processing complete. Maximum and minimum are on speaking terms.",
+      "wxgenR: Tmax/Tmin complete. The thermometer has been briefed."
+    )
+  )
+
+  stage_messages <- messages[[stage]]
+  if (length(stage_messages) == 0) return(invisible(NULL))
+
+  tick <- floor((as.numeric(Sys.time()) %% 86400) * 1000)
+  msg <- stage_messages[(tick %% length(stage_messages)) + 1]
+  message(msg)
+
+  invisible(NULL)
+}

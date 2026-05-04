@@ -12,6 +12,7 @@ A weather generator to simulate precipitation and temperature for regions with s
 
 Authors:
 \itemize{
+  \item David Woodson \email{dwoodson@usbr.gov}
   \item Subhrendu Gangopadhyay
   \item Lindsay Bearup
   \item Marketa McGuire

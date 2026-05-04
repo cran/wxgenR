@@ -102,6 +102,8 @@
     print(invalid_rows)  # Adjust 'n' as needed to display more rows
   }
 
+  wxgenR_fun_message("generate_TmaxTmin")
+
   return(list(df.sim = df.sim, qmap.monthly = qmap.monthly))
 
 }

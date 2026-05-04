@@ -90,7 +90,8 @@
   dat.d$states = dat.d$season
   #
   #default
-  return(list(dat.d = dat.d, syr = syr, eyr = eyr, smo = smo, emo = emo, sdate = sdate, edate = edate))
+  return(list(dat.d = dat.d, syr = syr, eyr = eyr, smo = smo, emo = emo,
+              sdate = sdate, edate = edate, traceThreshold = traceThreshold))
 } #end function
 
 
